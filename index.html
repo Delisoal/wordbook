@@ -36,10 +36,10 @@ body{
     display:flex;
     justify-content:space-between;
     flex-direction:column;
+    max-width:100%;
 }
 header,#control{
-    padding:1rem 2rem;
-    font-size:1.2rem;
+    padding:1rem;
     box-shadow:var(--shadow);
 }
 header{
@@ -47,9 +47,11 @@ header{
     justify-content:space-between;
     align-items:center;
     z-index:1;
+    font-size:min(1.2rem,4vw);
 }
 #control{
     text-align:right;
+    font-size:1.2rem;
 }
 .title{
     font-weight:bold;
@@ -254,8 +256,9 @@ table td,table th{
     display:inline-block;
     margin:0.5rem 0;
 }
-#tab-writing .txt{
+#tab-writing .txt,#tab-practice input[type="text"]{
     margin-top:0.5rem;
+    max-width:100%;
 }
 #tab-writing .correct{
     color:red;
@@ -335,10 +338,9 @@ input[type="button"],.option{
                 <div id="tab-home" class="card active">
                     <h2>使い方</h2>
                     <p>
-                        右上のボタンから単語の登録を行ってください。<br>
-                        登録が完了しましたら左のツールバーから学習を開始することが可能となります。<br>
-                        また、単語を4つ以上登録すると4択問題を使用することができます。<br>
-                        データをダウンロードすると、削除した後もアップロードで再び同じ問題を解くことができるようになります。
+                        右上のボタンから単語登録を行ってください。<br>
+                        完了すると左のツールバーから学習を開始できます。<br>
+                        データをダウンロードしておけば万が一の削除があった場合でもすぐに復元できるので安心です。
                     </p>
                 </div>
                 <div id="tab-4c" class="card">
@@ -396,13 +398,14 @@ input[type="button"],.option{
                     または　<input type="button" value="データをアップロード" id="new-upload" class="accent">
                 </fieldset>
                 <fieldset>
+                    <legend>その他の操作</legend>
+                    <input type="button" value="データをダウンロード" id="all-download" class="accent">
+                    <input type="button" value="すべてのデータを削除" id="all-delete" class="accent">
+                </fieldset>
+                <fieldset>
                     <legend>登録された単語の一覧</legend>
                     <div id="words"></div>
                 </fieldset>
-                <div class="right">
-                    <input type="button" value="データをダウンロード" id="all-download" class="accent">
-                    <input type="button" value="すべてのデータを削除" id="all-delete" class="accent">
-                </div>
                 <span id="setting-close" class="popup-close">×</span>
             </div>
         </div>
@@ -563,6 +566,7 @@ query(".tab").forEach(function(element){
             id("tab-"+element.dataset.tab).classList.add("active");
             element.classList.add("selected");
             tabName=element.dataset.tab;
+            id("onlymistakeForWriting").classList.add("hidden");
             if(tabName!="practice"&&tabName!="home"){
                 id("setting").disabled=true;
                 id("next").classList.add("hidden");
