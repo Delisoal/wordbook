@@ -310,7 +310,7 @@ input[type="button"],.option{
         display:block;
         font-weight:bold;
         cursor:pointer;
-        font-size:1.5rem;
+        font-size:1.8rem;
     }
     .selectArea .option{
         width:100%;
@@ -409,432 +409,438 @@ input[type="button"],.option{
             </div>
         </div>
         <script>
-let tabName="home";
-function id(id){
-    return document.getElementById(id);
-}
-function query(q){
-    return document.querySelectorAll(q);
-}
-function setItem(item){
-    item?localStorage.setItem("studyAppLocalStorage",JSON.stringify(item)):"";
-    wordsList();
-    setPractice();
-}
-function getItem(){
-    let item=new Array();
-    if(localStorage.getItem("studyAppLocalStorage")){
-        item=JSON.parse(localStorage.getItem("studyAppLocalStorage"));
+(function(){
+    let tabName="home";
+    function id(id){
+        return document.getElementById(id);
     }
-    return item;
-}
-id("setting").onclick=function(){
-    id("setting-bg").classList.add("open");
-}
-id("setting-close").onclick=function(){
-    id("setting-bg").classList.remove("open");
-}
-id("setting-bg").onclick=function(e){
-    if(e.target==id("setting-bg")){
-        id("setting-close").click();
+    function query(q){
+        return document.querySelectorAll(q);
     }
-}
-id("result").onclick=function(e){
-    if(e.target==id("result")){
-        id("result-close").click();
+    function setItem(item){
+        item?localStorage.setItem("studyAppLocalStorage",JSON.stringify(item)):"";
+        wordsList();
+        setPractice();
     }
-}
-id("toolbar-open").onclick=function(){
-    id("toolbar").classList.add("open");
-}
-id("toolbar-close").onclick=id("toolbar-bg").onclick=function(){
-    id("toolbar").classList.remove("open");
-}
-id("new-add").onclick=function(){
-    let lst=getItem();
-    let isDup=false;
-    let property=id("new-property");
-    let value=id("new-value");
-    for(let array of lst){
-        if(array[0]==property.value){
-            isDup=true;
-            break;
+    function getItem(){
+        let item=new Array();
+        if(localStorage.getItem("studyAppLocalStorage")){
+            item=JSON.parse(localStorage.getItem("studyAppLocalStorage"));
+        }
+        return item;
+    }
+    id("setting").onclick=function(){
+        id("setting-bg").classList.add("open");
+    }
+    id("setting-close").onclick=function(){
+        id("setting-bg").classList.remove("open");
+    }
+    id("setting-bg").onclick=function(e){
+        if(e.target==id("setting-bg")){
+            id("setting-close").click();
         }
     }
-    if(value.value!=""&&property.value!=""&&!isDup){
-        lst.unshift([property.value,value.value]);
-        setItem(lst);
-        property.value="";
-        value.value="";
+    id("result").onclick=function(e){
+        if(e.target==id("result")){
+            id("result-close").click();
+        }
     }
-}
-id("new-upload").onclick=function(){
-    let file=document.createElement("input");
-    file.type="file";
-    file.accept=".wordbook";
-    file.click();
-    file.onchange=function(){
-        let r=new FileReader();
-        r.readAsDataURL(file.files[0]);
-        r.onload=function(){
-            fetch(r.result).then(function(data){
-                return data.json();
-            }).then(function(obj){
-                let lst=getItem();
-                lst.forEach(function(array){
-                    obj.forEach(function(data,i){
-                        if(data[0]==array[0]){
-                            obj.splice(i,1);
+    id("toolbar-open").onclick=function(){
+        id("toolbar").classList.add("open");
+    }
+    id("toolbar-close").onclick=id("toolbar-bg").onclick=function(){
+        id("toolbar").classList.remove("open");
+    }
+    id("new-add").onclick=function(){
+        let lst=getItem();
+        let isDup=false;
+        let property=id("new-property");
+        let value=id("new-value");
+        for(let array of lst){
+            if(array[0]==property.value){
+                isDup=true;
+                break;
+            }
+        }
+        if(value.value!=""&&property.value!=""&&!isDup){
+            lst.unshift([property.value,value.value]);
+            setItem(lst);
+            property.value="";
+            value.value="";
+        }
+    }
+    id("new-upload").onclick=function(){
+        let file=document.createElement("input");
+        file.type="file";
+        file.accept=".wordbook";
+        file.click();
+        file.onchange=function(){
+            let r=new FileReader();
+            r.readAsDataURL(file.files[0]);
+            r.onload=function(){
+                fetch(r.result).then(function(data){
+                    return data.json();
+                }).then(function(obj){
+                    let lst=getItem();
+                    lst.forEach(function(array){
+                        obj.forEach(function(data,i){
+                            if(data[0]==array[0]){
+                                obj.splice(i,1);
+                            }
+                        });
+                    });
+                    if(obj.length>0&&confirm(obj.length+"個のデータを追加しますか？")){
+                        lst=obj.concat(lst);
+                        setItem(lst);
+                    }
+                    else{
+                        alert("データが空もしくは既存のデータと重複しております");
+                    }
+                });
+            }
+        }
+    }
+    id("all-download").onclick=function(){
+        let a=document.createElement("a");
+        let blob=new Blob([JSON.stringify(getItem())],{type:"application/json"});
+        let t=new Date().getTime();
+        a.href=window.URL.createObjectURL(blob);
+        a.download=(prompt("ファイル名",t)||t)+".wordbook";
+        a.click();
+    }
+    function wordsList(){
+        let lst=getItem();
+        id("words").innerHTML="";
+        lst.forEach(function(array,i){
+            let list=document.createElement("div");
+            list.classList.add("words-item");
+            list.innerHTML=`<span>単語：${array[0]}</span><br><span>単語の意味：${array[1]}</span><br><div class="right"><input type="button" class="words-edit" value="編集"><input type="button" class="words-delete" value="削除"></div>`;
+            id("words").appendChild(list);
+            query(".words-edit")[i].onclick=function(){
+                let nowLst=getItem();
+                let property=prompt("ここに変更する単語を入力",nowLst[i][0]);
+                let value=prompt("ここに変更する単語の意味を入力",nowLst[i][1]);
+                if(property&&value){
+                    nowLst[i]=[property,value];
+                    setItem(nowLst);
+                }
+            }
+            query(".words-delete")[i].onclick=function(){
+                let nowLst=getItem();
+                if(confirm("データを削除しますか？")){
+                    nowLst.splice(i,1);
+                    setItem(nowLst);
+                    if(getItem().length==0||(tabName.indexOf("4c")!=-1&&getItem().length<4)){
+                        query(".tab[data-tab='home']")[0].click();
+                    }
+                }
+            }
+        });
+        query(`.tab:not([data-tab="home"])`).forEach(function(element){
+            element.classList.remove("disabled");
+        });
+        if(lst.length==0){
+            query(`.tab:not([data-tab="home"])`).forEach(function(element){
+                element.classList.add("disabled");
+            });
+        }
+        if(lst.length<4){
+            query(`.tab[data-tab="4c"],.tab[data-tab="4c-ip"]`).forEach(function(element){
+                element.classList.add("disabled");
+            });
+        }
+    }
+    wordsList();
+    id("all-delete").onclick=function(){
+        if(confirm("すべてのデータを削除しますか？")&&confirm("本当にしますか？")){
+            query(".tab[data-tab='home']")[0].click();
+            setItem([]);
+        }
+    }
+    query(".tab").forEach(function(element){
+        element.onclick=function(){
+            id("toolbar-close").click();
+            if(!element.classList.contains("selected")){
+                query(".card").forEach(function(card){
+                    card.classList.remove("active");
+                });
+                query(".tab").forEach(function(tab){
+                    tab.classList.remove("selected");
+                });
+                id("tab-"+element.dataset.tab).classList.add("active");
+                element.classList.add("selected");
+                tabName=element.dataset.tab;
+                id("onlymistakeForWriting").classList.add("hidden");
+                if(tabName!="practice"&&tabName!="home"){
+                    id("setting").disabled=true;
+                    id("next").classList.add("hidden");
+                    if(tabName=="writing"){
+                        id("next").classList.remove("hidden");
+                        id("next").classList.add("accent");
+                        id("next").value="答え合わせ";
+                        setWriting();
+                    }
+                    else{
+                        set4c();
+                        set4cIp();
+                    }
+                }
+                else{
+                    id("setting").disabled=false;
+                    id("next").classList.add("hidden");
+                    if(tabName=="practice"){
+                        id("next").classList.remove("hidden");
+                        id("next").classList.remove("accent");
+                        id("next").value="リセット";
+                        setPractice();
+                    }
+                }
+            }
+        }
+    });
+    function set4c(element=id("tab-4c"),lst=getItem(),optlst=lst){
+        if(getItem().length>=4){
+            let originLst=[...optlst];
+            let mistake=new Array();
+            let correctNum=0;
+            let dataNum=0;
+            for(let i=lst.length-1;i>0;i--){
+                let j=Math.floor(Math.random()*(i+1));
+                let temp=lst[i];
+                lst[i]=lst[j];
+                lst[j]=temp;
+            }
+            for(let i=optlst.length-1;i>0;i--){
+                let j=Math.floor(Math.random()*(i+1));
+                let temp=optlst[i];
+                optlst[i]=optlst[j];
+                optlst[j]=temp;
+            }
+            function next(){
+                if(dataNum<lst.length){
+                    element.querySelectorAll(".option").forEach(function(option){
+                        option.onclick=function(){
+                            if(option.classList.contains("correct")){
+                                correctNum++;
+                                next();
+                            }
+                            else{
+                                let array=[...lst[option.dataset.index]];
+                                array.push(option.innerHTML);
+                                mistake.push(array);
+                                next();
+                            }
                         }
                     });
-                });
-                if(obj.length>0&&confirm(obj.length+"個のデータを追加しますか？")){
-                    lst=obj.concat(lst);
-                    setItem(lst);
+                    let correct=Math.floor(Math.random()*4);
+                    let clone=[...optlst];
+                    clone.splice(clone.findIndex(function(a){return JSON.stringify(a)==JSON.stringify(lst[dataNum])}),1);
+                    for(let i=clone.length-1;i>0;i--){
+                        let j=Math.floor(Math.random()*(i+1));
+                        let temp=clone[i];
+                        clone[i]=clone[j];
+                        clone[j]=temp;
+                    }
+                    clone=clone.slice(0,3);
+                    element.querySelector(".q").innerHTML=lst[dataNum][0];
+                    element.querySelectorAll(".option").forEach(function(option,i){
+                        if(i==correct){
+                            option.innerHTML=lst[dataNum][1];
+                            option.classList.add("correct");
+                        }
+                        else{
+                            option.classList.remove("correct");
+                        }
+                        option.dataset.index=lst.findIndex(function(a){return a==lst[dataNum]});
+                    });
+                    element.querySelectorAll(".option:not(.correct)").forEach(function(option,i){
+                        option.innerHTML=clone[i][1];
+                    });
+                    element.querySelector(".count").innerHTML=`${dataNum+1}/${lst.length}`;
+                    dataNum++;
                 }
                 else{
-                    alert("データが空もしくは既存のデータと重複しております");
+                    id("result-main").innerHTML=`<div style="text-align:center;font-size:2.8rem;font-weight:bold;margin-bottom:1rem">${correctNum} / ${lst.length}</div>
+                    <div style="text-align:center;font-size:1.2rem;">正答率：${Math.floor((correctNum/lst.length)*100)}%</div>
+                    <hr>
+                    <span style="color:#333;margin-bottom:0.8rem;">間違えた問題：</span><br>
+                    ${createTable(mistake)}
+                    <br>
+                    <br>
+                    <div class="right">
+                        <input type="button" value="間違えた問題のみを解く" id="onlymistake">
+                        <input type="button" value="もう一度解く" class="accent" id="retry">
+                    </div>`.replaceAll("\n","").replaceAll(/\s\s\s\s/g,"");
+                    if(mistake.length==0){
+                        id("onlymistake").disabled=true;
+                    }
+                    id("onlymistake").onclick=function(){
+                        id("result").classList.remove("open");
+                        set4c(element,mistake.map(function(a){
+                            return [a[0],a[1]];
+                        }),optlst);
+                    }
+                    id("result-close").onclick=function(){
+                        id("retry").click();
+                        query(".tab[data-tab='home']")[0].click();
+                    }
+                    id("retry").onclick=function(){
+                        id("result").classList.remove("open");
+                        set4c(element,optlst);
+                    }
+                    id("result").classList.add("open");
                 }
-            });
+            }
+            next();
         }
     }
-}
-id("all-download").onclick=function(){
-    let a=document.createElement("a");
-    let blob=new Blob([JSON.stringify(getItem())],{type:"application/json"});
-    let t=new Date().getTime();
-    a.href=window.URL.createObjectURL(blob);
-    a.download=(prompt("ファイル名",t)||t)+".wordbook";
-    a.click();
-}
-function wordsList(){
-    let lst=getItem();
-    id("words").innerHTML="";
-    lst.forEach(function(array,i){
-        let list=document.createElement("div");
-        list.classList.add("words-item");
-        list.innerHTML=`<span>単語：${array[0]}</span><br><span>単語の意味：${array[1]}</span><br><div class="right"><input type="button" class="words-edit" value="編集"><input type="button" class="words-delete" value="削除"></div>`;
-        id("words").appendChild(list);
-        query(".words-edit")[i].onclick=function(){
-            let nowLst=getItem();
-            let property=prompt("ここに変更する単語を入力",nowLst[i][0]);
-            let value=prompt("ここに変更する単語の意味を入力",nowLst[i][1]);
-            if(property&&value){
-                nowLst[i]=[property,value];
-                setItem(nowLst);
-            }
-        }
-        query(".words-delete")[i].onclick=function(){
-            let nowLst=getItem();
-            if(confirm("データを削除しますか？")){
-                nowLst.splice(i,1);
-                setItem(nowLst);
-            }
-        }
-    });
-    query(`.tab:not([data-tab="home"])`).forEach(function(element){
-        element.classList.remove("disabled");
-    });
-    if(lst.length==0){
-        query(`.tab:not([data-tab="home"])`).forEach(function(element){
-            element.classList.add("disabled");
+    function set4cIp(){
+        let lst=getItem();
+        lst=lst.map(function(data){
+            return [data[1],data[0]];
         });
+        set4c(id("tab-4c-ip"),lst);
     }
-    if(lst.length<4){
-        query(`.tab[data-tab="4c"],.tab[data-tab="4c-ip"]`).forEach(function(element){
-            element.classList.add("disabled");
-        });
-    }
-}
-wordsList();
-id("all-delete").onclick=function(){
-    if(confirm("すべてのデータを削除しますか？")&&confirm("本当にしますか？")){
-        setItem([]);
-    }
-}
-query(".tab").forEach(function(element){
-    element.onclick=function(){
-        id("toolbar-close").click();
-        if(!element.classList.contains("selected")){
-            query(".card").forEach(function(card){
-                card.classList.remove("active");
-            });
-            query(".tab").forEach(function(tab){
-                tab.classList.remove("selected");
-            });
-            id("tab-"+element.dataset.tab).classList.add("active");
-            element.classList.add("selected");
-            tabName=element.dataset.tab;
-            id("onlymistakeForWriting").classList.add("hidden");
-            if(tabName!="practice"&&tabName!="home"){
-                id("setting").disabled=true;
-                id("next").classList.add("hidden");
-                if(tabName=="writing"){
-                    id("next").classList.remove("hidden");
-                    id("next").classList.add("accent");
-                    id("next").value="答え合わせ";
-                    setWriting();
-                }
-                else{
-                    set4c();
-                    set4cIp();
-                }
-            }
-            else{
-                id("setting").disabled=false;
-                id("next").classList.add("hidden");
-                if(tabName=="practice"){
-                    id("next").classList.remove("hidden");
-                    id("next").classList.remove("accent");
-                    id("next").value="リセット";
-                    setPractice();
-                }
-            }
+    function createTable(array){
+        let innerHTML=`<span style="font-size:0.9em;color:gray;">（なし）</span>`;
+        if(array.length>0){
+            innerHTML=`<table>
+                <tr>
+                    <th>問題</th>
+                    <th>あなたの回答/正解</th>
+                </tr>
+                ${array.map(function(data){
+                    return `<tr><th>${data[0]}</th><td><span style="color:blue;margin-right:0.5rem;font-weight:bold;">×</span>${data[2]}<br><span style="color:red;margin-right:0.5rem;font-weight:bold;">○</span><span style="background:linear-gradient(transparent 60%,#ff0 60%);">${data[1]}</span></td><tr>`;
+                }).join("")}
+            </table>`.replaceAll("\n","").replaceAll(/\s\s\s\s/g,"");
         }
+        return innerHTML;
     }
-});
-function set4c(element=id("tab-4c"),lst=getItem(),optlst=lst){
-    if(getItem().length>=4){
-        let originLst=[...optlst];
+    function setWriting(lst=getItem()){
         let mistake=new Array();
         let correctNum=0;
-        let dataNum=0;
+        let omfw=id("onlymistakeForWriting");
         for(let i=lst.length-1;i>0;i--){
             let j=Math.floor(Math.random()*(i+1));
             let temp=lst[i];
             lst[i]=lst[j];
             lst[j]=temp;
         }
-        for(let i=optlst.length-1;i>0;i--){
-            let j=Math.floor(Math.random()*(i+1));
-            let temp=optlst[i];
-            optlst[i]=optlst[j];
-            optlst[j]=temp;
-        }
-        function next(){
-            if(dataNum<lst.length){
-                element.querySelectorAll(".option").forEach(function(option){
-                    option.onclick=function(){
-                        if(option.classList.contains("correct")){
-                            correctNum++;
-                            next();
-                        }
-                        else{
-                            let array=[...lst[option.dataset.index]];
-                            array.push(option.innerHTML);
-                            mistake.push(array);
-                            next();
-                        }
-                    }
-                });
-                let correct=Math.floor(Math.random()*4);
-                let clone=[...optlst];
-                clone.splice(clone.findIndex(function(a){return JSON.stringify(a)==JSON.stringify(lst[dataNum])}),1);
-                for(let i=clone.length-1;i>0;i--){
-                    let j=Math.floor(Math.random()*(i+1));
-                    let temp=clone[i];
-                    clone[i]=clone[j];
-                    clone[j]=temp;
-                }
-                clone=clone.slice(0,3);
-                element.querySelector(".q").innerHTML=lst[dataNum][0];
-                element.querySelectorAll(".option").forEach(function(option,i){
-                    if(i==correct){
-                        option.innerHTML=lst[dataNum][1];
-                        option.classList.add("correct");
-                    }
-                    else{
-                        option.classList.remove("correct");
-                    }
-                    option.dataset.index=lst.findIndex(function(a){return a==lst[dataNum]});
-                });
-                element.querySelectorAll(".option:not(.correct)").forEach(function(option,i){
-                    option.innerHTML=clone[i][1];
-                });
-                element.querySelector(".count").innerHTML=`${dataNum+1}/${lst.length}`;
-                dataNum++;
-            }
-            else{
-                id("result-main").innerHTML=`<div style="text-align:center;font-size:2.8rem;font-weight:bold;margin-bottom:1rem">${correctNum} / ${lst.length}</div>
-                <div style="text-align:center;font-size:1.2rem;">正答率：${Math.floor((correctNum/lst.length)*100)}%</div>
-                <hr>
-                <span style="color:#333;margin-bottom:0.8rem;">間違えた問題：</span><br>
-                ${createTable(mistake)}
-                <br>
-                <br>
-                <div class="right">
-                    <input type="button" value="間違えた問題のみを解く" id="onlymistake">
-                    <input type="button" value="もう一度解く" class="accent" id="retry">
-                </div>`.replaceAll("\n","").replaceAll(/\s\s\s\s/g,"");
-                if(mistake.length==0){
-                    id("onlymistake").disabled=true;
-                }
-                id("onlymistake").onclick=function(){
-                    id("result").classList.remove("open");
-                    set4c(element,mistake.map(function(a){
-                        return [a[0],a[1]];
-                    }),optlst);
-                }
-                id("result-close").onclick=function(){
-                    id("retry").click();
-                    query(".tab[data-tab='home']")[0].click();
-                }
-                id("retry").onclick=function(){
-                    id("result").classList.remove("open");
-                    set4c(element,optlst);
-                }
-                id("result").classList.add("open");
-            }
-        }
-        next();
-    }
-}
-function set4cIp(){
-    let lst=getItem();
-    lst=lst.map(function(data){
-        return [data[1],data[0]];
-    });
-    set4c(id("tab-4c-ip"),lst);
-}
-function createTable(array){
-    let innerHTML=`<span style="font-size:0.9em;color:gray;">（なし）</span>`;
-    if(array.length>0){
-        innerHTML=`<table>
-            <tr>
-                <th>問題</th>
-                <th>あなたの回答/正解</th>
-            </tr>
-            ${array.map(function(data){
-                return `<tr><th>${data[0]}</th><td><span style="color:blue;margin-right:0.5rem;font-weight:bold;">×</span>${data[2]}<br><span style="color:red;margin-right:0.5rem;font-weight:bold;">○</span><span style="background:linear-gradient(transparent 60%,#ff0 60%);">${data[1]}</span></td><tr>`;
-            }).join("")}
-        </table>`.replaceAll("\n","").replaceAll(/\s\s\s\s/g,"");
-    }
-    return innerHTML;
-}
-function setWriting(lst=getItem()){
-    let mistake=new Array();
-    let correctNum=0;
-    let omfw=id("onlymistakeForWriting");
-    for(let i=lst.length-1;i>0;i--){
-        let j=Math.floor(Math.random()*(i+1));
-        let temp=lst[i];
-        lst[i]=lst[j];
-        lst[j]=temp;
-    }
-    id("tab-writing").innerHTML="";
-    omfw.classList.add("hidden");
-    id("next").value="答え合わせ";
-    lst.forEach(function(data,i){
-        let main=document.createElement("div");
-        let temp=document.createElement("span");
-        temp.innerHTML=data[0];
-        id("tab-writing").appendChild(temp);
-        let width=temp.offsetWidth*1.5;
-        temp.remove();
-        main.innerHTML=`${i+1}. ${data[1]}：<br>
-        <input type="text" style="width:${width}px" class="txt" data-answer="${i}" placeholder="回答を入力" spellcheck="false"><br>
-        <span class="log"></span><br><br>`.replaceAll("\n","").replaceAll(/\s\s\s\s/g,"");
-        id("tab-writing").appendChild(main);
-    });
-    id("next").onclick=function(){
-        query(".txt").forEach(function(element,i){
-            let log=query(".log")[i];
-            element.disabled=true;
-            if(lst[element.dataset.answer][0]==element.value){
-                log.classList.add("correct");
-                log.innerHTML="正解";
-                correctNum++;
-            }
-            else{
-                log.classList.add("mistake");
-                log.innerHTML="不正解　正しくは"+lst[element.dataset.answer][0];
-                mistake.push(lst[element.dataset.answer]);
-            }
+        id("tab-writing").innerHTML="";
+        omfw.classList.add("hidden");
+        id("next").value="答え合わせ";
+        lst.forEach(function(data,i){
+            let main=document.createElement("div");
+            let temp=document.createElement("span");
+            temp.innerHTML=data[0];
+            id("tab-writing").appendChild(temp);
+            let width=temp.offsetWidth*1.5;
+            temp.remove();
+            main.innerHTML=`${i+1}. ${data[1]}：<br>
+            <input type="text" style="width:${width}px" class="txt" data-answer="${i}" placeholder="回答を入力" spellcheck="false"><br>
+            <span class="log"></span><br><br>`.replaceAll("\n","").replaceAll(/\s\s\s\s/g,"");
+            id("tab-writing").appendChild(main);
         });
-        let result=document.createElement("div");
-        result.innerHTML=`<div style="text-align:center;font-size:2.8rem;font-weight:bold;margin-bottom:1rem">${correctNum} / ${lst.length}</div>
-        <div style="text-align:center;font-size:1.2rem;margin-bottom:1.5rem;">正答率：${Math.floor((correctNum/lst.length)*100)}%</div>`;
-        id("tab-writing").querySelector("div").before(result);
-        omfw.classList.remove("hidden");
-        if(mistake.length>0){
-            omfw.disabled=false;
-        }
-        else{
-            omfw.disabled=true;
-        }
-        omfw.onclick=function(){
-            setWriting(mistake);
-        }
-        id("next").value="もう一度解く";
         id("next").onclick=function(){
-            setWriting();
-        }
-    }
-}
-function setPractice(){
-    let lst=getItem();
-    id("tab-practice").innerHTML="";
-    lst.forEach(function(data,i){
-        let main=document.createElement("div");
-        let temp=document.createElement("span");
-        temp.innerHTML=data[0];
-        id("tab-practice").appendChild(temp);
-        let width=temp.offsetWidth*1.5;
-        temp.remove();
-        main.innerHTML=`${i+1}. ${data[1]} - ${data[0]}：<br>`;
-        for(let num=0;num<3;num++){
-            let input=document.createElement("input");
-            input.type="text";
-            input.style.width=width;
-            input.oninput=function(){
-                if(input.value!=""){
-                    if(input.value==data[0]){
-                        input.style.outlineColor="red";
-                    }
-                    else{
-                        input.style.outlineColor="blue";
-                    }
+            query(".txt").forEach(function(element,i){
+                let log=query(".log")[i];
+                element.disabled=true;
+                if(lst[element.dataset.answer][0]==element.value){
+                    log.classList.add("correct");
+                    log.innerHTML="正解";
+                    correctNum++;
                 }
                 else{
-                        input.style.outlineColor="";
+                    log.classList.add("mistake");
+                    log.innerHTML="不正解　正しくは"+lst[element.dataset.answer][0];
+                    mistake.push(lst[element.dataset.answer]);
                 }
-            }
-            main.appendChild(input);
-        }
-        for(let num=0;num<2;num++){
-            main.appendChild(document.createElement("br"));
-        }
-        id("tab-practice").appendChild(main);
-    });
-    id("next").onclick=function(){
-        setPractice();
-    }
-}
-window.onkeypress=function(e){
-    if(e.target.tagName=="INPUT"){
-        if(e.shiftKey&&e.key=="Enter"){
-            let preElement=query("input")[[...query("input")].findIndex(function(a){return a==e.target})-1];
-            if(preElement){
-                preElement.focus();
-            }
-        }
-        else if(e.key=="Enter"){
-            if(e.target==id("new-add")){
-                id("new-property").focus();
+            });
+            let result=document.createElement("div");
+            result.innerHTML=`<div style="text-align:center;font-size:2.8rem;font-weight:bold;margin-bottom:1rem">${correctNum} / ${lst.length}</div>
+            <div style="text-align:center;font-size:1.2rem;margin-bottom:1.5rem;">正答率：${Math.floor((correctNum/lst.length)*100)}%</div>`;
+            id("tab-writing").querySelector("div").before(result);
+            omfw.classList.remove("hidden");
+            if(mistake.length>0){
+                omfw.disabled=false;
             }
             else{
-                let nextElement=query("input")[[...query("input")].findIndex(function(a){return a==e.target})+1];
-                if(nextElement){
-                    nextElement.focus();
+                omfw.disabled=true;
+            }
+            omfw.onclick=function(){
+                setWriting(mistake);
+            }
+            id("next").value="もう一度解く";
+            id("next").onclick=function(){
+                setWriting();
+            }
+        }
+    }
+    function setPractice(){
+        let lst=getItem();
+        id("tab-practice").innerHTML="";
+        lst.forEach(function(data,i){
+            let main=document.createElement("div");
+            let temp=document.createElement("span");
+            temp.innerHTML=data[0];
+            id("tab-practice").appendChild(temp);
+            let width=temp.offsetWidth*1.5;
+            temp.remove();
+            main.innerHTML=`${i+1}. ${data[1]} - ${data[0]}：<br>`;
+            for(let num=0;num<3;num++){
+                let input=document.createElement("input");
+                input.type="text";
+                input.style.width=width;
+                input.oninput=function(){
+                    if(input.value!=""){
+                        if(input.value==data[0]){
+                            input.style.outlineColor="red";
+                        }
+                        else{
+                            input.style.outlineColor="blue";
+                        }
+                    }
+                    else{
+                            input.style.outlineColor="";
+                    }
+                }
+                main.appendChild(input);
+            }
+            for(let num=0;num<2;num++){
+                main.appendChild(document.createElement("br"));
+            }
+            id("tab-practice").appendChild(main);
+        });
+        id("next").onclick=function(){
+            setPractice();
+        }
+    }
+    window.onkeypress=function(e){
+        if(e.target.tagName=="INPUT"){
+            if(e.shiftKey&&e.key=="Enter"){
+                let preElement=query("input")[[...query("input")].findIndex(function(a){return a==e.target})-1];
+                if(preElement){
+                    preElement.focus();
+                }
+            }
+            else if(e.key=="Enter"){
+                if(e.target==id("new-add")){
+                    id("new-property").focus();
+                }
+                else{
+                    let nextElement=query("input")[[...query("input")].findIndex(function(a){return a==e.target})+1];
+                    if(nextElement){
+                        nextElement.focus();
+                    }
                 }
             }
         }
     }
-}
-set4c();
-set4cIp();
-setWriting();
-setPractice();
+    set4c();
+    set4cIp();
+    setWriting();
+    setPractice();
+})();
         </script>
     </body>
 </html>
