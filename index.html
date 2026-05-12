@@ -660,9 +660,16 @@ input[type="button"],.option{
                     clone.forEach(function(data,i){
                         lst[dataNum][1].split("/").forEach(function(value){
                             if(data==value){
-                                correctLabel.push(clone.splice(i,1));
+                                correctLabel.push(value);
                             }
                         });
+                    });
+                    correctLabel.forEach(function(data){
+                        clone.forEach(function(value,i){
+                            if(data==value){
+                                clone.splice(i,1);
+                            }
+                        })
                     });
                     correctLabel=correctLabel[Math.floor(Math.random()*correctLabel.length)];
                     for(let i=clone.length-1;i>0;i--){
