@@ -158,6 +158,7 @@ legend{
     background:rgba(255,255,255,0.7);
     border-radius:0.3rem;
     transition:top 0.2s;
+    box-shadow:0 0 5px 0 rgba(0,0,0,0.4);
 }
 .popup.open .popup-close{
     top:calc(5vh + 1rem);
@@ -195,7 +196,7 @@ input:disabled{
     padding:2rem 3rem;
     display:none;
     max-width:90%;
-    max-height:95%;
+    max-height:98%;
     overflow-y:auto;
     position:relative;
     font-size:1.1rem;
@@ -327,6 +328,7 @@ input[type="button"],.option{
             <span class="tab" data-tab="4c-ip">4択問題（逆問題）</span>
             <span class="tab" data-tab="writing">直接記述</span>
             <span class="tab" data-tab="practice">練習用</span>
+            <span class="tab" data-tab="practice-ip">練習用（逆問題）</span>
         </div>
         <div id="toolbar-bg"></div>
         <div id="main">
@@ -337,11 +339,18 @@ input[type="button"],.option{
             </header>
             <div id="display">
                 <div id="tab-home" class="card active">
-                    <h2>使い方</h2>
+                    <h2>はじめに</h2>
                     <p>
                         右上のボタンから単語登録を行ってください。<br>
-                        完了すると左のツールバーから学習を開始できます。<br>
+                        完了すると左のツールバーまたは左上の≡ボタン（ツールボタン）から学習を開始できます。<br>
                         データをダウンロードしておけば万が一の削除があった場合でもすぐに復元できるので安心です。
+                    </p>
+                    <h2>単語登録</h2>
+                    <p>
+                        右上のボタンをクリックしたあと、単語と意味をそれぞれのテキストボックスに入力してください。<br>
+                        意味が複数ある場合は半角スラッシュ「/」で区切ってください。<br>
+                        「登録された単語の一覧」というフォームで既に追加したデータを確認・編集・削除することが可能です。<br>
+                        データを4つ以上登録した場合、すべての4択問題が利用可能となります。
                     </p>
                 </div>
                 <div id="tab-4c" class="card">
@@ -366,6 +375,7 @@ input[type="button"],.option{
                 </div>
                 <div id="tab-writing" class="card"></div>
                 <div id="tab-practice" class="card"></div>
+                <div id="tab-practice-ip" class="card"></div>
             </div>
             <div id="control">
                 <input type="button" value="間違えた問題のみを解く" id="onlymistakeForWriting" class="hidden">
@@ -572,7 +582,7 @@ input[type="button"],.option{
                 element.classList.add("selected");
                 tabName=element.dataset.tab;
                 id("onlymistakeForWriting").classList.add("hidden");
-                if(tabName!="practice"&&tabName!="home"){
+                if(tabName.indexOf("practice")==-1&&tabName!="home"){
                     id("setting").disabled=true;
                     id("next").classList.add("hidden");
                     if(tabName=="writing"){
@@ -589,11 +599,16 @@ input[type="button"],.option{
                 else{
                     id("setting").disabled=false;
                     id("next").classList.add("hidden");
-                    if(tabName=="practice"){
+                    if(tabName.indexOf("practice")!=-1){
                         id("next").classList.remove("hidden");
                         id("next").classList.remove("accent");
                         id("next").value="リセット";
-                        setPractice();
+                        if(tabName=="practice"){
+                            setPractice();
+                        }
+                        else{
+                            setPracticeIp();
+                        }
                     }
                 }
             }
@@ -634,8 +649,22 @@ input[type="button"],.option{
                         }
                     });
                     let correct=Math.floor(Math.random()*4);
-                    let clone=[...optlst];
-                    clone.splice(clone.findIndex(function(a){return JSON.stringify(a)==JSON.stringify(lst[dataNum])}),1);
+                    let clone=new Set();
+                    [...optlst].forEach(function(data){
+                        data[1].split("/").forEach(function(va){
+                            clone.add(va);
+                        });
+                    });
+                    clone=[...clone];
+                    let correctLabel=new Array();
+                    clone.forEach(function(data,i){
+                        lst[dataNum][1].split("/").forEach(function(value){
+                            if(data==value){
+                                correctLabel.push(clone.splice(i,1));
+                            }
+                        });
+                    });
+                    correctLabel=correctLabel[Math.floor(Math.random()*correctLabel.length)];
                     for(let i=clone.length-1;i>0;i--){
                         let j=Math.floor(Math.random()*(i+1));
                         let temp=clone[i];
@@ -643,10 +672,10 @@ input[type="button"],.option{
                         clone[j]=temp;
                     }
                     clone=clone.slice(0,3);
-                    element.querySelector(".q").innerHTML=lst[dataNum][0];
+                    element.querySelector(".q").innerHTML=lst[dataNum][0].replaceAll("/","、");
                     element.querySelectorAll(".option").forEach(function(option,i){
                         if(i==correct){
-                            option.innerHTML=lst[dataNum][1];
+                            option.innerHTML=correctLabel;
                             option.classList.add("correct");
                         }
                         else{
@@ -655,7 +684,7 @@ input[type="button"],.option{
                         option.dataset.index=lst.findIndex(function(a){return a==lst[dataNum]});
                     });
                     element.querySelectorAll(".option:not(.correct)").forEach(function(option,i){
-                        option.innerHTML=clone[i][1];
+                        option.innerHTML=clone[i];
                     });
                     element.querySelector(".count").innerHTML=`${dataNum+1}/${lst.length}`;
                     dataNum++;
@@ -737,7 +766,7 @@ input[type="button"],.option{
             id("tab-writing").appendChild(temp);
             let width=temp.offsetWidth*1.5;
             temp.remove();
-            main.innerHTML=`${i+1}. ${data[1]}：<br>
+            main.innerHTML=`${i+1}. ${data[1].replaceAll("/","、")}：<br>
             <input type="text" style="width:${width}px" class="txt" data-answer="${i}" placeholder="回答を入力" spellcheck="false"><br>
             <span class="log"></span><br><br>`.replaceAll("\n","").replaceAll(/\s\s\s\s/g,"");
             id("tab-writing").appendChild(main);
@@ -777,24 +806,32 @@ input[type="button"],.option{
             }
         }
     }
-    function setPractice(){
-        let lst=getItem();
+    function setPractice(el=id("tab-practice"),lst=getItem()){
         id("tab-practice").innerHTML="";
+        id("tab-practice-ip").innerHTML="";
         lst.forEach(function(data,i){
             let main=document.createElement("div");
             let temp=document.createElement("span");
             temp.innerHTML=data[0];
-            id("tab-practice").appendChild(temp);
+            el.appendChild(temp);
             let width=temp.offsetWidth*1.5;
             temp.remove();
-            main.innerHTML=`${i+1}. ${data[1]} - ${data[0]}：<br>`;
+            main.style.cssText=`max-width:100%;`;
+            main.innerHTML=`${i+1}. ${data[1].replaceAll("/","、")} - ${data[0].replaceAll("/","、")}：<br>`;
             for(let num=0;num<3;num++){
                 let input=document.createElement("input");
                 input.type="text";
                 input.style.width=width;
+                input.style.maxWidth="90%";
                 input.oninput=function(){
                     if(input.value!=""){
-                        if(input.value==data[0]){
+                        let isTextCorrect;
+                        data[0].split("/").forEach(function(value){
+                            if(value==input.value){
+                                isTextCorrect=true;
+                            }
+                        });
+                        if(isTextCorrect){
                             input.style.outlineColor="red";
                         }
                         else{
@@ -802,7 +839,7 @@ input[type="button"],.option{
                         }
                     }
                     else{
-                            input.style.outlineColor="";
+                        input.style.outlineColor="";
                     }
                 }
                 main.appendChild(input);
@@ -810,11 +847,18 @@ input[type="button"],.option{
             for(let num=0;num<2;num++){
                 main.appendChild(document.createElement("br"));
             }
-            id("tab-practice").appendChild(main);
+            el.appendChild(main);
         });
         id("next").onclick=function(){
-            setPractice();
+            setPractice(el,lst);
         }
+    }
+    function setPracticeIp(){
+        let lst=getItem();
+        lst=lst.map(function(data){
+            return [data[1],data[0]];
+        });
+        setPractice(id("tab-practice-ip"),lst);
     }
     window.onkeypress=function(e){
         if(e.target.tagName=="INPUT"){
@@ -837,10 +881,6 @@ input[type="button"],.option{
             }
         }
     }
-    set4c();
-    set4cIp();
-    setWriting();
-    setPractice();
 })();
         </script>
     </body>
